@@ -10,7 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^3.0.6",
     "express": "^4.16.4",
+    "jsonwebtoken": "^8.5.1",
     "mongodb": "^3.1.10",
     "mongoose": "^5.3.16",
     "validator": "^10.9.0"
@@ -18,5 +20,13 @@
   "devDependencies": {
     "nodemon": "^1.18.9"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rmittal1421/manageMyTasks.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rmittal1421/manageMyTasks/issues"
+  },
+  "homepage": "https://github.com/rmittal1421/manageMyTasks#readme",
   "description": ""
 }

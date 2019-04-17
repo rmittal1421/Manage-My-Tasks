@@ -7,7 +7,21 @@ app.post('/users', async (req, res) => {
 
     try {
         await user.save()
-        res.status(201).send(user)
+        const token = await user.generateAuthToken()
+        res.status(201).send({user, token})
+    } catch (e) {
+        res.status(400).send(e)
+    }
+})
+
+app.post ('/users/login', async (req, res) => {
+    const _email = req.body.email
+    const _password = req.body.password
+
+    try {
+        const user = await User.checkCredentials (_email, _password)
+        const token = await user.generateAuthToken ()
+        res.send ({user, token})
     } catch (e) {
         res.status(400).send(e)
     }
@@ -39,17 +53,21 @@ app.get('/users/:id', async (req, res) => {
 })
 
 app.patch ('/users/:id', async (req, res) => {
+    const updates = Object.keys (req.body)
+    const allowedUpdates = ['age','name','email','password']
+
+    let validateUpdates = updates.every((update) => {
+        return allowedUpdates.includes(update)
+    })
+
+    if (!validateUpdates) return res.status(404).send({error:'Invalid udpate'})
+    
     try {
-        const updates = Object.keys (req.body)
-        const allowedUpdates = ['age','name','email','password']
-
-        let validateUpdates = updates.every((update) => {
-            return allowedUpdates.includes(update)
+        const user = await User.findById(req.params.id)
+        updates.forEach ((update) => {
+            user[update] = req.body[update]
         })
-
-        if (!validateUpdates) return res.status(404).send({error:'Invalid udpate'})
-
-        const user = await User.findByIdAndUpdate(req.params.id, req.body, { new:true, runValidators:true })
+        await user.save()
         if (!user) res.status(400).send()
         res.send(user)
     } catch (e) {

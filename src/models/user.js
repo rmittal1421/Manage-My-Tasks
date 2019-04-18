@@ -47,6 +47,14 @@ const userSchema = new mongoose.Schema ({
             required: true
         }
     }]
+}, {
+    timestamps: true
+})
+
+userSchema.virtual ('tasks', {
+    ref: 'Task',
+    localField: '_id',
+    foreignField: 'owner'
 })
 
 userSchema.statics.checkCredentials = async (email, _password) => {
@@ -86,7 +94,16 @@ userSchema.pre ('save', async function (next) {
         user.password = await bcrypt.hash (user.password, 8)
     }
 
-    next()
+    next() 
+})
+
+userSchema.pre ('remove', async function (next) {
+    const user = this
+
+    const Task = require ('../models/task')
+    await Task.deleteMany ({ owner : user._id })
+
+    next() 
 })
 
 const User = mongoose.model('User', userSchema)

@@ -64,7 +64,7 @@ app.get ('/users/me', auth, async (req, res) => {
     res.send(req.user)
 })
 
-app.get('/users/:id', async (req, res) => {
+app.get('/users/:id', auth, async (req, res) => {
     const _id = req.params.id
 
     try {
@@ -103,6 +103,7 @@ app.patch ('/users/me', auth, async (req, res) => {
 
 app.delete ('/users/me', auth, async (req, res) => {
     try {
+        // await User.deleteOne ({_id:req.user._id})
         await req.user.remove()
         res.send(req.user)
     } catch (e) {

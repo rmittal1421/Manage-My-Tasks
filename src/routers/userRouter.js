@@ -1,6 +1,7 @@
 const express = require ('express')
 const app = new express.Router()
 const User = require ('../models/user')
+const auth = require ('../middleware/auth')
 
 app.post('/users', async (req, res) => {
     const user = new User(req.body)
@@ -27,6 +28,29 @@ app.post ('/users/login', async (req, res) => {
     }
 })
 
+app.post ('/users/logout', auth, async (req, res) => {
+    try {
+        req.user.tokens = req.user.tokens.filter ((token) => {
+            return token.token !== req.token
+        })
+        await req.user.save()
+        res.send()
+    } catch (e) {
+        res.status(500).send()
+    }
+})
+
+app.post ('/users/logoutAll', auth, async (req, res) => {
+    let validUser = false
+    try {
+        req.user.tokens = []
+        await req.user.save()
+        res.send()
+    } catch (e) {
+        res.status(500).send()
+    }
+})
+
 app.get('/users', async (req, res) => {
     try {
         const users = await User.find({})
@@ -34,6 +58,10 @@ app.get('/users', async (req, res) => {
     } catch (e) {
         res.status(500).send()
     }
+})
+
+app.get ('/users/me', auth, async (req, res) => {
+    res.send(req.user)
 })
 
 app.get('/users/:id', async (req, res) => {
@@ -52,7 +80,7 @@ app.get('/users/:id', async (req, res) => {
     }
 })
 
-app.patch ('/users/:id', async (req, res) => {
+app.patch ('/users/me', auth, async (req, res) => {
     const updates = Object.keys (req.body)
     const allowedUpdates = ['age','name','email','password']
 
@@ -63,23 +91,20 @@ app.patch ('/users/:id', async (req, res) => {
     if (!validateUpdates) return res.status(404).send({error:'Invalid udpate'})
     
     try {
-        const user = await User.findById(req.params.id)
         updates.forEach ((update) => {
-            user[update] = req.body[update]
+            req.user[update] = req.body[update]
         })
-        await user.save()
-        if (!user) res.status(400).send()
-        res.send(user)
+        await req.user.save()
+        res.send(req.user)
     } catch (e) {
         res.status(404).send(e)
     }
 })
 
-app.delete ('/users/:id', async (req, res) => {
+app.delete ('/users/me', auth, async (req, res) => {
     try {
-        const user = await User.findByIdAndDelete(req.params.id)
-        if (!user) return res.status(404).send()
-        res.send(user)
+        await req.user.remove()
+        res.send(req.user)
     } catch (e) {
         res.status(500).send()
     }

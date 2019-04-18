@@ -60,9 +60,19 @@ userSchema.statics.checkCredentials = async (email, _password) => {
     return user
 }
 
+userSchema.methods.toJSON = function () {
+    const user = this
+    const userObject = user.toObject()
+
+    delete userObject.tokens
+    delete userObject.password
+
+    return userObject
+}
+
 userSchema.methods.generateAuthToken = async function () {
     const user = this
-    const token = jwt.sign ({ _id:user._id.toString() }, 'thisismynodecourse')
+    const token = jwt.sign ({ _id:user._id.toString() }, 'thisismynodecourse') 
 
     user.tokens = user.tokens.concat ({token})
     await user.save()

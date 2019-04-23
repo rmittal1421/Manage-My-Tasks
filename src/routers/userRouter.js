@@ -1,8 +1,10 @@
 const express = require ('express')
 const app = new express.Router()
+const sharp = require ('sharp')
 const User = require ('../models/user')
 const auth = require ('../middleware/auth')
 const multer = require ('multer')
+const { sendWelcomeMessage, sendLeavingMessage } = require ('../emails/accounts')
 
 const upload = multer ({
     limits: {
@@ -21,6 +23,7 @@ app.post('/users', async (req, res) => {
 
     try {
         await user.save()
+        sendWelcomeMessage (user)
         const token = await user.generateAuthToken()
         res.status(201).send({user, token})
     } catch (e) {
@@ -116,7 +119,9 @@ app.patch ('/users/me', auth, async (req, res) => {
 
 app.delete ('/users/me', auth, async (req, res) => {
     try {
+        const currentUser = req.user
         await req.user.remove()
+        sendLeavingMessage (currentUser)
         res.send(req.user)
     } catch (e) {
         res.status(500).send()
@@ -124,7 +129,7 @@ app.delete ('/users/me', auth, async (req, res) => {
 })
 
 app.post ('/users/me/avatar', auth, upload.single ('avatar'), async (req, res) => {
-    req.user.avatar = req.file.buffer
+    req.user.avatar = await sharp(req.file.buffer).resize({width:250, height: 250}).png().toBuffer()
     await req.user.save()
     res.send ('The image has been correctly posted')
 }, (error, req, res, next) => {
